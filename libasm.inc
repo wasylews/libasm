@@ -1,6 +1,6 @@
 ; libasm - partial implementation of libc in tasm
 ; uses CDECL as calling convention
-; Copyright: 2016, Wasylews
+; Copyright: 2016, Wasylews, S.Habor
 ; License: MIT
 
 ;;; fopen() modes
@@ -241,30 +241,48 @@ itoa proc c
 itoa endp
 
 
-
 ; ftoa(float *number, char* buffer, int setprecession)
-; FIXME: invalid result if number is like xxx.0xxx
 ftoa proc c
     arg @number, @buffer, @setprecession
     local @@temp
-    uses bx, cx
+    uses bx, cx, dx
 
     mov bx, @number
     fld dword ptr[bx]
-
     mov bx, @@temp
 
     ; set round mode
-    mov word ptr[bx], 0f7ffh; round mode(only integer)
+    mov word ptr[bx], 0ffffh    ; round mode(only integer)
     fldcw word ptr[bx]
 
     fist dword ptr[bx]
     mov ax, word ptr[bx]
 
     ; fraction
-    fisub dword ptr[bx]
+    fabs 
+    fild dword ptr[bx]
+    fabs
+    fsub
+    mov dword ptr[bx], 3dccf333h
+    xor dx, dx
+    fcom dword ptr[bx]
+    push ax
+    fstsw ax
+    sahf
+    jnc @@ns
+    
+    fldz
+    fcomp
+    fstsw ax
+    sahf
+    jz @@ns
+    
+    fadd dword ptr[bx]
+    inc dx
+@@ns:
+    pop ax
     fimul @setprecession    ; make it int
-
+    
     fistp dword ptr[bx]
     mov cx, word ptr[bx]    ; fraction in cx
 
@@ -283,6 +301,7 @@ ftoa proc c
     add bx, ax
     mov byte ptr[bx], '.'
     inc bx
+    push bx
 
     ; fraction part
     push 10
@@ -290,48 +309,33 @@ ftoa proc c
     push cx
     call itoa
     add sp, 6
-
+    
+    pop bx
+    cmp dl, 0
+    je @@end
+    dec byte ptr[bx]
+@@end:
     ret
 ftoa endp
 
 
-; int atoi(char *buffer) -> ax
+;int atoi(char *buffer) -> ax
+;************************************
+; return error code -> bl
+;
+;   bl == 0 -> Ok
+;   bl == 3 -> total error
+;
+;************************************
 atoi proc c
     arg @buffer
-    uses bx, si
-
-    mov si, @buffer         ; buffer
-    xor ax, ax              ; ax = 0
-
-@@trans_loop:
-    xor bx, bx
-    mov bl, byte ptr[si]    ; bl <- buffer[esi]
-
-    cmp bl, '0'
-    jl @@exit               ; bl < '0' (unsigned)
-
-    cmp bl, '9'
-    jg @@exit               ; bl > '9' (unsigned)
-
-    cmp bl, 10
-    je @@exit
-
-    cmp bl, 0
-    je @@exit
-
-    sub bl, '0'             ; convert bl to integer(bl = bl - '0')
-    add ax, bx              ; ax = ax + bx
-    mov bx, 10
-    mul bx                  ; ax = ax * 10
-    inc si
-
-    jmp @@trans_loop
-
-@@exit:
-    mov bx, 10
-    div bx
+    push 10 
+    push @buffer
+    call xatoi
+    add sp, 4
     ret
 atoi endp
+
 
 ; int xatoi(char *buffer, int radix) -> ax
 ;************************************
@@ -567,7 +571,6 @@ toupper proc c
 toupper endp
 
 
-
 ; lower(char c)
 lower proc c
     arg @@c
@@ -580,7 +583,6 @@ lower proc c
 @@end:
     ret
 lower endp
-
 
 
 ; tolower(char *s)

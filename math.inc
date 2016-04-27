@@ -1,6 +1,6 @@
 ; libasm - partial implementation of libc in tasm
 ; uses CDECL as calling convention
-; Copyright: 2016, S.Habor
+; Copyright: 2016, Wasylews, S.Habor
 ; License: MIT
 
 
