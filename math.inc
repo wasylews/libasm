@@ -5,7 +5,7 @@
 
 
 
-; int absw(word num)
+; int iabs(word num)
 iabs proc c
 	arg @num
 	mov ax, @num
