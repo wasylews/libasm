@@ -189,7 +189,7 @@ fgets proc c
 fgets endp
 
 
-; itoa(int number, char* buffer, int radix)
+; itoa(int number, char* buffer, int radix) -> buffer
 itoa proc c
     arg @number, @buffer, @radix
     uses bx, cx, dx, si
@@ -241,7 +241,7 @@ itoa proc c
 itoa endp
 
 
-; ftoa(float *number, char* buffer, int setprecession)
+; ftoa(float *number, char* buffer, int setprecession) -> buffer
 ftoa proc c
     arg @number, @buffer, @setprecession
     local @@temp
@@ -255,28 +255,33 @@ ftoa proc c
     mov word ptr[bx], 0ffffh    ; round mode(only integer)
     fldcw word ptr[bx]
 
+	; extract integer -> ax
     fist dword ptr[bx]
     mov ax, word ptr[bx]
 
-    ; fraction
+    ; extract fraction
     fabs 
     fild dword ptr[bx]
     fabs
     fsub
-    mov dword ptr[bx], 3dccf333h
+    mov dword ptr[bx], 3dccf333h ; 0.1
     xor dx, dx
+	
+	; if(fration >= 0.1) goto @@ns
     fcom dword ptr[bx]
     push ax
     fstsw ax
     sahf
     jnc @@ns
     
+	; else if(fraction == 0) goto @@ns
     fldz
     fcomp
     fstsw ax
     sahf
     jz @@ns
     
+	; else fraction += 0.1
     fadd dword ptr[bx]
     inc dx
 @@ns:
@@ -284,7 +289,7 @@ ftoa proc c
     fimul @setprecession    ; make it int
     
     fistp dword ptr[bx]
-    mov cx, word ptr[bx]    ; fraction in cx
+    mov cx, word ptr[bx]    ; fraction -> cx
 
     ; integer part
     mov bx, @buffer
@@ -294,6 +299,11 @@ ftoa proc c
     call itoa
     add sp, 6
 
+	; if(fraction == 0) goto @@end
+	cmp cx, 0
+	je @@end
+	
+	; search position for '.' 
     push bx
     call strlen
     add sp, 2
@@ -396,28 +406,6 @@ xatoi proc c
 xatoi endp
 
 
-
-; int strlen(char *s) -> ax
-strlen proc c
-    uses bx
-    arg @s
-
-    mov bx, @s
-    xor ax, ax
-
-@@count_loop:
-    cmp byte ptr[bx], 0
-    je @@end_loop
-
-    inc ax
-    inc bx
-    jmp @@count_loop
-
-@@end_loop:
-    ret
-strlen endp
-
-
 ; fputn(int n, FILE handle) - converts number to sring and prints it to file
 ; custom function, for fprintf
 fputn proc c
@@ -510,6 +498,26 @@ fprintf proc c
 fprintf endp
 
 
+; int strlen(char *s) -> ax
+strlen proc c
+    uses bx
+    arg @s
+
+    mov bx, @s
+    xor ax, ax
+
+@@count_loop:
+    cmp byte ptr[bx], 0
+    je @@end_loop
+
+    inc ax
+    inc bx
+    jmp @@count_loop
+
+@@end_loop:
+    ret
+strlen endp
+
 ; int strcmp(char *s1, char *s2) -> ax
 strcmp proc c
     arg @s1, @s2
@@ -539,7 +547,7 @@ strcmp proc c
 strcmp endp
 
 
-; upper(char c)
+; upper(char c) -> cl
 upper proc c
     arg @@c
     mov ax, @@c
@@ -571,7 +579,7 @@ toupper proc c
 toupper endp
 
 
-; lower(char c)
+; lower(char c) -> cl
 lower proc c
     arg @@c
     mov ax, @@c
