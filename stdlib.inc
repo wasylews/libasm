@@ -85,14 +85,14 @@ ftoa proc c
 
     ; if(fration >= 0.1) goto @@ns
     fcom dword ptr[bx]
-    ; FIXME illegal immediate
+    ; FIXME: illegal immediate
     push ax
     fstsw ax
     sahf
     jnc @@ns
 
     ; else if(fraction == 0) goto @@ns
-    ; FIXME illegal immediate
+    ; FIXME: illegal immediate
     fldz
     fcomp
     fstsw ax
@@ -246,7 +246,7 @@ atof proc c
 
     fdivr ; div fraction, 10^cx
 
-    ; FIXME illegal immediate
+    ; FIXME: illegal immediate
     fxch
     fldz
     fcomp
