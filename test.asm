@@ -1,3 +1,5 @@
+.286
+
 .model small
 .stack 256h
 
@@ -9,14 +11,13 @@ s db 'hello world', 0
 
 LOCALS
 
-include string.inc
+include stdio.inc
 
 main proc
     mov ax, @data
     mov ds, ax
 
-    push offset s
-    call strlen
+    puts s
 
     mov ax, 4c00h
     int 21h
