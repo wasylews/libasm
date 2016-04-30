@@ -1,0 +1,4 @@
+# ignore dosbox config, tasm folder and build folder
+dosbox.conf
+BUILD
+tasm
