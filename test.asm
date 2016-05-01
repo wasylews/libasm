@@ -4,7 +4,7 @@
 .stack 256h
 
 .data
-filename db 'test.asm', 0
+filename db 'LICENSE', 0
 handle dw ?
 buffer db 20 dup('')
 
@@ -18,15 +18,28 @@ main proc c
     mov ax, @data
     mov ds, ax
 
+    ; open file for read
     push RO
     push offset filename
     call fopen
     add sp, 4
 
+    ; check for errors
     test ax, ax
     je @@exit
 
+    ; save handle
     mov handle, ax
+
+    ; skip first 2 chars
+    push SEEK_CUR
+    push 0
+    push 2
+    push handle
+    call fseek
+    add sp, 6
+
+    ; read file line by line
 @@read_loop:
     push handle
     push 20
@@ -37,9 +50,11 @@ main proc c
     test ax, ax
     je @@close_file
 
+    ; print to console
     puts buffer
     jmp @@read_loop
 
+    ; close file
 @@close_file:
     push handle
     call fclose
