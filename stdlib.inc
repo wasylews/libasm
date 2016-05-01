@@ -80,7 +80,6 @@ ftoa proc c
     fild dword ptr[bx]
     fabs
     fsub
-    ; FIXME: Value out of range
     mov word ptr[bx], 0f333h ; 0.1
 	mov word ptr[bx+2], 3dcch
     xor dx, dx
