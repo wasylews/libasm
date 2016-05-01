@@ -56,6 +56,7 @@ itoa proc c
 itoa endp
 
 
+; FIXME: float -0.xx..x -> string '0.xx..x'
 ; ftoa(float *number, char* buffer, int setprecession) -> buffer
 ftoa proc c
     arg @number, @buffer, @setprecession
