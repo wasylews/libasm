@@ -66,17 +66,22 @@ fgetc proc c
     local @@temp
     uses si
 
-    lea si, @@temp
+    mov si, @@temp
+
     push @handle
     push 1
     push si
     call fread
     add sp, 6
 
-    xor ax, ax
+    test ax, ax
+    je @@return
+
     mov al, byte ptr[si]
+@@return:
     ret
 fgetc endp
+
 
 
 ; int fputs(char *s, FILE handle) -> ax
@@ -157,10 +162,9 @@ gets endp
 
 
 ; int fgets(char *s, int size, FILE handle)
-; TOOD: read string char-by-char, stop when \n\r found or strlen(s) == size
 fgets proc c
-    uses si, cx
     arg @s, @size, @handle
+    uses si, cx
 
     mov si, @s
     mov cx, @size
@@ -170,28 +174,21 @@ fgets proc c
     call fgetc
     add sp, 2
 
+    test ax, ax            ; check for EOF
+    je @@eof_return
+
     mov byte ptr[si], al
     inc si
-    ; TODO: check for EOF, EOL
-    cmp al, 0ah
-    je @@stop_reading
 
-    ; check for EOF
-    test ax, ax
-    je @@exit
+    cmp al, 0ah             ; check for \n
+    je @@stop_reading
 
     loop @@read_loop
 @@stop_reading:
-    ; skip \r\n
-    ; push SEEK_CUR
-    ; push 2
-    ; push @handle
-    ; call fseek
-    ; add sp, 6
-
     ; add \0 to end of string
     mov byte ptr[si], 0
-@@exit:
+
+@@eof_return:
     ret
 fgets endp
 
@@ -253,7 +250,9 @@ fread proc c
     mov cx, @size
     mov dx, @ptr
     int 21h
-
+    jnc @@exit
+    mov ax, 0               ; return 0 on error
+@@exit:
     ret
 fread endp
 

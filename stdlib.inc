@@ -80,7 +80,7 @@ ftoa proc c
     fabs
     fsub
     ; FIXME: Value out of range
-    mov dword ptr[bx], 3dccf333h ; 0.1
+    ; mov dword ptr[bx], 3dccf333h ; 0.1
     xor dx, dx
 
     ; if(fration >= 0.1) goto @@ns
