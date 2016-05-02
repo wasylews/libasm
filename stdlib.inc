@@ -57,9 +57,9 @@ itoa endp
 
 
 ; FIXME: float -0.xx..x -> string '0.xx..x'
-; ftoa(float *number, char* buffer, int setprecession) -> buffer
+; ftoa(float *number, char* buffer, int precession) -> buffer
 ftoa proc c
-    arg @number, @buffer, @setprecession
+    arg @number, @buffer, @precession
     local @@temp
     uses bx, cx, dx
 
@@ -104,7 +104,7 @@ ftoa proc c
     inc dx
 @@ns:
     pop ax
-    fimul @setprecession    ; make it int
+    fimul @precession    ; make it int
 
     fistp dword ptr[bx]
     mov cx, word ptr[bx]    ; fraction -> cx
