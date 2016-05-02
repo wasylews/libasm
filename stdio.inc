@@ -288,8 +288,7 @@ fseek proc c
 fseek endp
 
 
-; _putint(int n, FILE handle) - converts number to sring and prints it to file
-; custom function, for fprintf
+; _putint(int n, FILE handle)
 _putint proc c
     arg @n, @handle
     local @@temp_buffer
@@ -307,6 +306,26 @@ _putint proc c
 
     ret
 _putint endp
+
+
+; _putfloat(int n, FILE handle)
+_putfloat proc c
+    arg @n, @handle
+    local @@temp_buffer
+
+    push 6                  ; by default
+    push offset @@temp_buffer
+    push @n
+    call ftoa
+    add sp, 6
+
+    push @handle
+    push offset @@temp_buffer
+    call fputs
+    add sp, 4
+
+    ret
+_putfloat endp
 
 
 ; int fprintf(FILE handle, char *fmt, ...)
@@ -329,7 +348,6 @@ fprintf proc c
     cmp bl, '%'
     jne @@just_char         ; not begin of string escape
 
-; TODO: use switch operator
     ; '%' found, check for params after it
     inc si
     cmp byte ptr[si], 's'
@@ -337,7 +355,9 @@ fprintf proc c
     cmp byte ptr[si], 'd'
     je @@print_int
 
-    ; TODO: float/double
+    ; TODO: float precision %.xxf
+    cmp byte ptr[si], 'f'
+    je @@print_float
 
     ; TODO: unknown format handling
 
@@ -363,6 +383,15 @@ fprintf proc c
     add di, 2
     jmp @@next_char
 
+@@print_float:
+    ; '%f' found, print float
+    push [bp+4]
+    push [bp+di]
+    call _putfloat
+    add sp, 4
+
+    add di, 2
+    jmp @@next_char
 @@just_char:
     fputc bl [bp+4]
 
