@@ -1,6 +1,6 @@
-.286
-
 .model small
+.386
+
 .stack 256h
 
 .data
