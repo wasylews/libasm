@@ -4,6 +4,14 @@
 ; License: MIT
 
 
+; TODO: char *strerror(int)
+; TODO: size_t strspn(const char *s, const char *accept)
+; TODO: size_t strcspn(const char *s, const char *reject)
+; TODO: char *strstr(const char *haystack, const char *needle)
+; TODO: char *strtok(char *, const char *)
+; TODO: size_t strxfrm(char *dest, const char *src, size_t n)
+
+
 ; int strlen(char *s) -> ax
 strlen proc c
     uses bx
@@ -54,7 +62,6 @@ strcmp endp
 ;int strncmp(const char *s1, const char *s2, size_t n) -> ax
 strncmp proc c
 	arg @s1, @s2, @n
-	uses bx, si, di
 	push @n
 	push @s2
 	push @s1
@@ -64,10 +71,21 @@ strncmp proc c
 strncmp endp
 
 
+; int strcoll(const char *s1, const char *s2) -> ax
+strcoll proc c
+	arg @s1, @s2
+	push @s2
+	push @s1
+	call memcmp
+	add sp, 4
+	ret
+strcoll endp
+
+
 ; char *strcat(char *dest, const char *src)
 strcat proc c
 	arg @dest, @src
-	uses ax, si, di
+	uses si, di
 	mov si, @dest
 	push si
 	call strlen
@@ -84,6 +102,7 @@ strcat proc c
 	jmp @@cycle
 @@end:
 	mov byte ptr[si], 0
+	mov ax, @dest
 	ret
 strcat endp
 
@@ -91,7 +110,7 @@ strcat endp
 ; char *strncat(char *dest, const char *src, size_t n)
 strncat proc c
 	arg @dest, @src, @n
-	uses ax, si, di
+	uses si, di
 	mov si, @dest
 	push si
 	call strlen
@@ -109,7 +128,8 @@ strncat proc c
 	dec cx
 	jmp @@cycle
 @@end:
-	mov byte ptr[si], 0
+	mov byte ptr[si], 0	
+	mov ax, @dest
 	ret
 strncat endp
 
@@ -138,11 +158,15 @@ strcpy endp
 ; char *strncpy(char *dest, const char *src, size_t n) *dest -> ax
 strncpy proc c
 	arg @dest, @src
-	uses si, di
+	uses bx
 	push @n
 	push @src
 	push @dest
 	call memcpy
+	add sp, 6
+	mov bx, @dest
+	add bx, @n
+	mov byte ptr[bx], 0
 	ret
 strncpy endp
 
@@ -344,67 +368,3 @@ memcmp proc c
     ret	
 	ret
 memcmp endp
-
-
-; char upper(char c) -> al
-upper proc c
-    arg @@c
-    mov ax, @@c
-    cmp al, 'a'
-    jb @@end
-    cmp al, 'z'
-    ja @@end
-    sub al, 32
-@@end:
-    ret
-upper endp
-
-
-; toupper(char *s)
-toupper proc c
-    uses bx, dx
-    arg @s
-    mov bx, @s
-@@beg:
-    mov dl, [bx]
-    push dx
-    call upper
-    add sp, 2
-    mov [bx], al
-    inc bx
-    cmp byte ptr[bx], 0
-    jne @@beg
-    ret
-toupper endp
-
-
-; char lower(char c) -> al
-lower proc c
-    arg @@c
-    mov ax, @@c
-    cmp al, 'A'
-    jb @@end
-    cmp al, 'Z'
-    ja @@end
-    add al, 32
-@@end:
-    ret
-lower endp
-
-
-; tolower(char *s)
-tolower proc c
-    uses bx, dx
-    arg @s
-    mov bx, @s
-@@beg:
-    mov dl, [bx]
-    push dx
-    call lower
-    add sp, 2
-    mov [bx], al
-    inc bx
-    cmp byte ptr[bx], 0
-    jne @@beg
-    ret
-tolower endp
