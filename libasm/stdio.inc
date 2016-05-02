@@ -29,7 +29,7 @@ ifnb <c, handle>
     ; we need to save registers
     push si
 
-    lea si, @@temp
+    mov si, @@temp
     mov byte ptr[si], c
 
     push handle
@@ -288,19 +288,19 @@ fseek proc c
 fseek endp
 
 
-; _putint(int n, FILE handle)
+; _putint(int n, int radix, FILE handle)
 _putint proc c
-    arg @n, @handle
+    arg @n, @radix, @handle
     local @@temp_buffer
 
-    push 10
-    push offset @@temp_buffer
+    push @radix
+    push word ptr[offset @@temp_buffer]
     push @n
     call itoa
     add sp, 6
 
     push @handle
-    push offset @@temp_buffer
+    push word ptr[offset @@temp_buffer]
     call fputs
     add sp, 4
 
@@ -314,13 +314,13 @@ _putfloat proc c
     local @@temp_buffer
 
     push 6                  ; by default
-    push offset @@temp_buffer
+    push word ptr [offset @@temp_buffer]
     push @n
     call ftoa
     add sp, 6
 
     push @handle
-    push offset @@temp_buffer
+    push word ptr [offset @@temp_buffer]
     call fputs
     add sp, 4
 
@@ -352,10 +352,14 @@ fprintf proc c
     inc si
     cmp byte ptr[si], 's'
     je @@print_str
+
+    cmp byte ptr[si], 'x'
+    je @@print_int
+
     cmp byte ptr[si], 'd'
     je @@print_int
 
-    ; TODO: float precision %.xxf
+    ; TODO: float precision %.xxf (6 digits by default)
     cmp byte ptr[si], 'f'
     je @@print_float
 
@@ -365,8 +369,8 @@ fprintf proc c
 
 @@print_str:
     ; '%s' found, print string
-    push [bp+4]             ; handle
-    push [bp+di]
+    push word ptr[bp+4]             ; handle
+    push word ptr[bp+di]
     call fputs
     add sp, 4               ; restore stack
 
@@ -374,26 +378,39 @@ fprintf proc c
     jmp @@next_char
 
 @@print_int:
-    ; '%d' found, print integer
-    push [bp+4]
-    push [bp+di]
+    ; '%d' or '%x' found, print integer
+    push word ptr[bp+4]
+
+    ; check format for hex
+    cmp byte ptr[si], 'x'
+    je @@hex_int            ; if so, radix = 16
+
+    ; else, print number as decimal
+    push 10
+    jmp @@print
+
+@@hex_int:
+    push 16
+
+@@print:
+    push word ptr[bp+di]
     call _putint
-    add sp, 4
+    add sp, 6
 
     add di, 2
     jmp @@next_char
 
 @@print_float:
     ; '%f' found, print float
-    push [bp+4]
-    push [bp+di]
+    push word ptr[bp+4]
+    push word ptr[bp+di]
     call _putfloat
     add sp, 4
 
     add di, 2
     jmp @@next_char
 @@just_char:
-    fputc bl [bp+4]
+    fputc bl word ptr[bp+4]
 
 @@next_char:
     inc si

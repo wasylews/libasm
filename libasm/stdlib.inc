@@ -285,6 +285,7 @@ atoi proc c
 atoi endp
 
 
+; FIXME: don't use bx for error code! All errors return in ax
 ; int xatoi(char *buffer, int radix) -> ax
 ;************************************
 ; return error code -> bl
@@ -297,27 +298,29 @@ atoi endp
 ;************************************
 xatoi proc c
     arg @buffer, @radix
-    uses cx
+    uses cx, dx
     xor ax, ax
+
     mov bx, @buffer
     mov dx, @radix
     xor cx, cx
+
     cmp dl, 1
     ja @@ns1
     mov bl, 1
     jmp @@end
-    @@ns1:
+@@ns1:
     cmp dl, 36
     jna @@ns2
     mov bl, 2
     jmp @@end
-    @@ns2:
+@@ns2:
     mov cl, byte ptr[bx]
     cmp cl, '-'
     jne @@cycle
     inc bx
 
-    @@cycle:
+@@cycle:
     mov cl, byte ptr[bx]
     cmp cl, 0
     je @@ns
@@ -329,17 +332,18 @@ xatoi proc c
     jb @@ns4
     mov bl, 3
     jmp @@end
-    @@ns4:
+@@ns4:
     mul dl
     add ax, cx
     inc bx
     jmp @@cycle
-    @@ns:
+@@ns:
     mov bx, @buffer
     cmp byte ptr[bx], '-'
     jne @@ns5
     neg ax
-    @@ns5:
+@@ns5:
     xor bl, bl
-    @@end: ret
+@@end:
+    ret
 xatoi endp
