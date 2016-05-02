@@ -4,6 +4,9 @@
 .stack 256h
 
 .data
+fmt db 'Ubuntu %f', 0ah, 0dh, 0
+float_number dd 12.123
+
 filename db 'LICENSE', 0
 handle dw ?
 buffer db 20 dup('')
@@ -17,6 +20,11 @@ include stdio.inc
 main proc c
     mov ax, @data
     mov ds, ax
+
+    push offset float_number
+    push offset fmt
+    push STDOUT
+    call fprintf
 
     ; open file for read
     push RO
