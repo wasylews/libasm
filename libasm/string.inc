@@ -5,9 +5,6 @@
 
 
 ; TODO: char *strerror(int)
-; TODO: size_t strspn(const char *s, const char *accept)
-; TODO: size_t strcspn(const char *s, const char *reject)
-; TODO: char *strstr(const char *haystack, const char *needle)
 ; TODO: char *strtok(char *, const char *)
 ; TODO: size_t strxfrm(char *dest, const char *src, size_t n)
 
@@ -46,20 +43,20 @@ strcmp proc c
     mov bl, [di]
 
     sub al, bl
-    jne @@strcmp_done         ; return if different
-    cmp bl, 0                 ; on end of both strings, ax = 0
+    jne @@strcmp_done			; return if different
+    cmp bl, 0					; on end of both strings, ax = 0
     je @@strcmp_done
     inc si
     inc di
     jmp @@strcmp_loop
 
 @@strcmp_done:
-    cbw                     ; extend al to ax
+    cbw 						; extend al to ax
     ret
 strcmp endp
 
 
-; int strncmp(const char *s1, const char *s2, size_t n) -> ax
+;int strncmp(const char *s1, const char *s2, size_t n) -> ax
 strncmp proc c
 	arg @s1, @s2, @n
 	push @n
@@ -82,7 +79,7 @@ strcoll proc c
 strcoll endp
 
 
-; char *strcat(char *dest, const char *src)
+; char *strcat(char *dest, const char *src) -> ax
 strcat proc c
 	arg @dest, @src
 	uses si, di
@@ -107,7 +104,7 @@ strcat proc c
 strcat endp
 
 
-; char *strncat(char *dest, const char *src, size_t n)
+; char *strncat(char *dest, const char *src, size_t n) -> ax
 strncat proc c
 	arg @dest, @src, @n
 	uses si, di
@@ -128,7 +125,7 @@ strncat proc c
 	dec cx
 	jmp @@cycle
 @@end:
-	mov byte ptr[si], 0
+	mov byte ptr[si], 0	
 	mov ax, @dest
 	ret
 strncat endp
@@ -194,44 +191,85 @@ strpbrk proc c
 	inc si
 	jmp @@cycle1
 @@not_found:
-	xor ax, ax
+	mov ax, ax
 @@end:
 	ret
 strpbrk endp
 
 
+; size_t strcspn(const char *s, const char *accept) -> ax
+strcspn proc c
+	arg @s, @accept
+	push @accept
+	push @s
+	call strpbrk
+	add sp, 4
+	cmp ax, 0
+	jne @@found
+	push @s
+	call strlen
+	add sp, 2
+	ret
+@@found:
+	sub ax, @s
+	ret
+strcspn endp
+
+
+; size_t strspn(const char *s, const char *accept) -> ax
+strspn proc c
+	arg @s, @accept
+	uses bx, cx
+	xor cx, cx
+	mov bx, @s
+	push @accept
+@@cycle:
+	push bx
+	call strpbrk
+	add sp, 2
+	cmp ax, 0
+	je @@end
+	cmp ax, bx
+	jne @@end
+	inc bx
+	inc cx
+	jmp @@cycle
+@@end:
+	add sp, 2
+	mov ax, cx
+	ret
+strspn endp
+
+
 ; char *strchr(const char *s, int c) -> ax
 strchr proc c
 	arg @s, @c
-	uses bx, cx
+	uses bx
 	mov bx, @s
-	mov cx, @c
-	mov ah, cl
-	xor cx, cx
+	mov ax, @c
+	mov ah, al
 @@cycle:
 	mov al, [bx]
-	cmp al, 0
-	je @@not_found
-	inc bx
 	cmp al, ah
+	je @@end
+	inc bx
+	cmp al, 0
 	jne @@cycle
-	dec bx
-	mov ax, bx
-	jmp @@end
-@@not_found:
-	xor ax, ax
+	xor bx, bx
 @@end:
+	mov ax, bx
 	ret
 strchr endp
 
 
-; char *strrchr(const char *s, int c) -> ax
+;char *strrchr(const char *s, int c) -> ax
 strrchr proc c
 	arg @s, @c
 	uses bx, si
 	push @s
 	call strlen
 	add sp, 2
+	inc ax
 	mov si, ax
 	mov bx, @s
 	mov ax, @c
@@ -243,8 +281,8 @@ strrchr proc c
 	dec si
 	cmp al, ah
 	jne @@cycle
-	inc si
 	mov ax, bx
+	inc ax
 	add ax, si
 	jmp @@end
 @@not_found:
@@ -252,6 +290,52 @@ strrchr proc c
 @@end:
 	ret
 strrchr endp
+
+
+; char *strstr(const char *s1, const char *s2)
+strstr proc c
+	arg @s1, @s2
+	uses bx, cx, dx, si
+	push @s2
+	call strlen
+	add sp, 2
+	mov cx, ax					; cx = strlen(s2)
+	mov si, @s1					; si = *s1
+	push 0
+	push si
+	call strchr
+	add sp, 4
+	mov di, ax					; di = *s1[end]
+	mov bx, @s2
+	mov dl, [bx]				; dl = s2[0]
+@@cycle:
+	mov ax, si
+	add ax, cx
+	cmp ax, di
+	ja @@not_found
+	push dx
+	push si
+	call strchr
+	add sp, 4
+	cmp ax, 0
+	jz @@not_found
+	mov si, ax
+	push cx
+	push @s2
+	push si
+	call strncmp
+	add sp, 6
+	cmp ax, 0
+	jz @@found
+	inc si
+	jmp @@cycle
+@@found:
+	mov ax, si
+	ret
+@@not_found:
+	xor ax, ax
+	ret
+strstr endp
 
 
 ; void *memset(void *memptr, int val, size_t num )
@@ -351,7 +435,7 @@ memcmp proc c
 	mov si, @s1
 	mov di, @s2
 @@cycle:
-    cmp cx, 0
+    cmp cx, 0 
     je @@e
 	mov al, [si]
 	mov ah, [di]
@@ -364,7 +448,7 @@ memcmp proc c
 @@e:
 	xor ax, ax
 @@strcmp_done:
-    cbw                     ; extend al to ax
-    ret
+    cbw							; extend al to ax
+    ret	
 	ret
 memcmp endp
