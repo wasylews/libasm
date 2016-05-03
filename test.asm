@@ -69,10 +69,7 @@ main proc c
     add sp, 2
 
 @@exit:
-    mov ax, 4c00h
-    int 21h
-
-    ret
+    exit
 main endp
 
 end main
