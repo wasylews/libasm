@@ -9,7 +9,8 @@
 	EXIT_SUCCESS 	equ 0
 	;MB_CUR_MAX		equ ?
 	;RAND_MAX		equ ?
-	
+	ENDL			equ 0ah
+	TAB				equ '	'
 	
 ; void exit(int value)
 ifndef 'exit'
