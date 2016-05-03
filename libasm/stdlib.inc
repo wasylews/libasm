@@ -4,6 +4,27 @@
 ; License: MIT
 
 
+	NULL 			equ 0
+	EXIT_FAILURE	equ 0
+	EXIT_SUCCESS 	equ 0
+	;MB_CUR_MAX		equ ?
+	;RAND_MAX		equ ?
+	
+	
+; void exit(int value)
+ifndef 'exit'
+exit macro v
+	ifnb <v>
+		mov ax, v
+	else
+		mov ax, EXIT_SUCCESS
+	endif
+		mov ah, 4ch
+		int 21h
+endm
+endif
+
+
 ; itoa(int number, char* buffer, int radix) -> buffer
 itoa proc c
     arg @number, @buffer, @radix
@@ -147,7 +168,7 @@ ftoa proc c
 ftoa endp
 
 
-; float atof(char *a, float *num) -> num
+;float atof(char *a, float *num) -> num
 ; return error code -> bl
 ;
 ;   bl == 0 -> Ok
@@ -171,8 +192,8 @@ atof proc c
 @@not_end_str:
     inc bx
     jmp @@beg_cycle
-
 @@end_cycle:
+
     mov byte ptr[bx], 0 ; substitute '.' -> '\0'
 
     ; convert integer part -> num
@@ -267,7 +288,7 @@ atof proc c
 atof endp
 
 
-; int atoi(char *buffer) -> ax
+;int atoi(char *buffer) -> ax
 ;************************************
 ; return error code -> bl
 ;
@@ -344,6 +365,6 @@ xatoi proc c
     neg ax
 @@ns5:
     xor bl, bl
-@@end:
+@@end: 
     ret
 xatoi endp
