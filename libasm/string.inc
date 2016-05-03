@@ -59,7 +59,7 @@ strcmp proc c
 strcmp endp
 
 
-;int strncmp(const char *s1, const char *s2, size_t n) -> ax
+; int strncmp(const char *s1, const char *s2, size_t n) -> ax
 strncmp proc c
 	arg @s1, @s2, @n
 	push @n
@@ -128,7 +128,7 @@ strncat proc c
 	dec cx
 	jmp @@cycle
 @@end:
-	mov byte ptr[si], 0	
+	mov byte ptr[si], 0
 	mov ax, @dest
 	ret
 strncat endp
@@ -225,7 +225,7 @@ strchr proc c
 strchr endp
 
 
-;char *strrchr(const char *s, int c) -> ax
+; char *strrchr(const char *s, int c) -> ax
 strrchr proc c
 	arg @s, @c
 	uses bx, si
@@ -351,7 +351,7 @@ memcmp proc c
 	mov si, @s1
 	mov di, @s2
 @@cycle:
-    cmp cx, 0 
+    cmp cx, 0
     je @@e
 	mov al, [si]
 	mov ah, [di]
@@ -365,6 +365,6 @@ memcmp proc c
 	xor ax, ax
 @@strcmp_done:
     cbw                     ; extend al to ax
-    ret	
+    ret
 	ret
 memcmp endp
