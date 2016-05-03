@@ -153,6 +153,7 @@ isspace proc c
 	ret
 isspace endp
 
+
 ;int iscntrl(int c)
 ;=============================================
 ;	if(c <= 1fh) ax = true;
@@ -245,64 +246,74 @@ isprint endp
 
 
 ; char toupper(char c) -> al
-toupper proc c
-    arg @@c
-    mov ax, @@c
+toupper macro c
+    mov ax, c
     cmp al, 'a'
     jb @@end
     cmp al, 'z'
     ja @@end
     sub al, 32
 @@end:
-    ret
-toupper endp
+endm
 
 
 ; char tolower(char c) -> al
-tolower proc c
-    arg @@c
-    mov ax, @@c
+tolower macro c
+    mov ax, c
     cmp al, 'A'
     jb @@end
     cmp al, 'Z'
     ja @@end
     add al, 32
 @@end:
-    ret
-tolower endp
+endm
 
 
-; _toupper(char *s)
+; int isblank(int ch)
+;=============================================
+;				C99
+;	if(isspace(c)) ax = true;
+;	else ax = false;
+;=============================================
+isblank proc c
+	arg @c
+	push @c
+	call isspace
+	add sp, 2
+	ret
+isblank endp
+
+
+; char *_toupper(char *s) -> ax
 _toupper proc c
     uses bx, dx
     arg @s
     mov bx, @s
 @@beg:
     mov dl, [bx]
-    push dx
-    call toupper
+    toupper dx
     add sp, 2
     mov [bx], al
     inc bx
     cmp byte ptr[bx], 0
     jne @@beg
+	mov ax, @s
     ret
 _toupper endp
 
-
-; _tolower(char *s)
+ 
+; char *_tolower(char *s) -> ax
 _tolower proc c
-    uses bx, dx
+    uses bx
     arg @s
     mov bx, @s
 @@beg:
-    mov dl, [bx]
-    push dx
-    call tolower
-    add sp, 2
+    mov al, [bx]
+	tolower ax
     mov [bx], al
     inc bx
     cmp byte ptr[bx], 0
     jne @@beg
+	mov ax, @s
     ret
 _tolower endp
