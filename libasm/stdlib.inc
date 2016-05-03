@@ -168,7 +168,7 @@ ftoa proc c
 ftoa endp
 
 
-;float atof(char *a, float *num) -> num
+; float atof(char *a, float *num) -> num
 ; return error code -> bl
 ;
 ;   bl == 0 -> Ok
@@ -192,6 +192,7 @@ atof proc c
 @@not_end_str:
     inc bx
     jmp @@beg_cycle
+
 @@end_cycle:
 
     mov byte ptr[bx], 0 ; substitute '.' -> '\0'
@@ -288,7 +289,7 @@ atof proc c
 atof endp
 
 
-;int atoi(char *buffer) -> ax
+; int atoi(char *buffer) -> ax
 ;************************************
 ; return error code -> bl
 ;
@@ -365,6 +366,7 @@ xatoi proc c
     neg ax
 @@ns5:
     xor bl, bl
-@@end: 
+    
+@@end:
     ret
 xatoi endp
