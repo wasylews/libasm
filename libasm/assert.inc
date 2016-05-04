@@ -24,7 +24,7 @@ ifndef NDEBUG
 		puts _errs
 		pop ax
 		mov ds, ax
-		exit
+		abort
 	endif
 endif
 endm

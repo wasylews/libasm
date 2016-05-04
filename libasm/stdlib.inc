@@ -5,25 +5,134 @@
 
 
 	NULL 			equ 0
-	EXIT_FAILURE	equ 0
 	EXIT_SUCCESS 	equ 0
+	EXIT_FAILURE	equ 1
+	SIGABRT			equ 2
 	;MB_CUR_MAX		equ ?
 	;RAND_MAX		equ ?
 	ENDL			equ 0ah
 	TAB				equ '	'
+	SOUND_SIGNAL	equ 7
 	
+	_atexit_arr_len	equ 32
+	_atexit_num		db 0
+	_atexit_arr		dw _atexit_arr_len dup(NULL)
+
+
 ; void exit(int value)
-ifndef 'exit'
-exit macro v
-	ifnb <v>
-		mov ax, v
+exit proc c
+	arg @value
+	
+	push ds
+	mov ax, cs
+	mov ds, ax
+	
+	movzx si, _atexit_num
+	dec si
+	lea bx, _atexit_arr
+	add bx, si
+	add bx, si
+@@cycle:
+	cmp si, 0
+	jl @@end
+	mov dx, [bx]
+	
+	pop ax
+	push ds
+	mov ds, ax
+	
+	call dx
+	
+	pop ax
+	push ds
+	mov ds, ax
+	
+	dec si
+	sub bx, 2
+	jmp @@cycle
+	
+@@end:
+	mov ax, @value
+	mov ah, 4ch
+	int 21h
+exit endp
+
+; void _exit(int value)
+ifndef '_exit'
+_exit macro value
+	ifnb <value>
+		push value
 	else
-		mov ax, EXIT_SUCCESS
+		push EXIT_SUCCESS
 	endif
-		mov ah, 4ch
-		int 21h
+	call exit
 endm
 endif
+
+
+; int _atexit(void(*funcptr)(void))
+ifndef '_atexit'
+_atexit macro funcptr: req
+	push funcptr
+	call atexit
+	add sp, 2
+endm
+endif
+
+
+; void abort(void)
+ifndef '_abort'
+_abort macro
+	call abort
+endm
+endif
+
+
+; void abort(void)
+abort proc c
+	putc SOUND_SIGNAL
+	mov ax, SIGABRT
+	mov ah, 4ch
+	int 21h
+abort endp
+
+
+
+; int atexit(void(*funcptr)(void)) -> ax
+;=====================
+;	ax = 0 - Ok
+;	ax = 1 - ERROR
+;=====================
+atexit proc c
+	arg @funcptr
+	uses bx, si
+	
+	push ds
+	mov ax, cs
+	mov ds, ax
+	
+	movzx si, _atexit_num
+	cmp si, _atexit_arr_len
+	jb @@ns
+	
+	pop ax
+	mov ds, ax
+	mov ax, 1
+	ret
+	
+@@ns:
+	lea bx, _atexit_arr
+	mov ax, @funcptr
+	add bx, si
+	add bx, si
+	mov [bx], ax
+	inc _atexit_num
+	
+	pop ax
+	mov ds, ax
+	xor ax, ax
+	ret
+atexit endp
 
 
 ; itoa(int number, char* buffer, int radix) -> buffer

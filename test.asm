@@ -69,7 +69,7 @@ main proc c
     add sp, 2
 
 @@exit:
-    exit
+    _exit
 main endp
 
 end main
